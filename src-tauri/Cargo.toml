@@ -1,0 +1,42 @@
+[package]
+name = "streamviv"
+version = "2.1.0"
+description = "Ultra-lightweight capture card viewer with hardware rotation and full device/resolution/FPS control."
+authors = ["devwolf75"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Linux only: reaching into the WebKitGTK webview to switch MediaStream on
+# and to answer the permission requests that getUserMedia() and
+# enumerateDevices() raise. See src/platform.rs for why this is necessary.
+#
+# The version is pinned to exactly what wry links against, so both crates
+# resolve to the same `webkit2gtk::WebView` type - a different minor version
+# would be a different type and `PlatformWebview::inner()` would not compile.
+[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))'.dependencies]
+webkit2gtk = { version = "=2.0.2", features = ["v2_38"] }
+
+[features]
+# This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
+
+# Size/speed profile. A smaller binary starts faster and touches less of a
+# 2014-era mechanical/SATA disk and CPU cache on launch. The settings are
+# portable: they cost nothing on macOS or Linux and the resulting binaries
+# are all in the 3 MB range.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+incremental = false

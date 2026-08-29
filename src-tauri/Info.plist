@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!--
+    macOS kills - not "denies", kills - any process that touches the camera
+    or the microphone without a usage description. Two consumers read this
+    file: the bundler merges it into `StreamViv.app/Contents/
+    Info.plist`, and build.rs links it into the binary's __TEXT,__info_plist
+    section so the un-bundled binary produced by `tauri dev` survives too.
+  -->
+  <key>CFBundleIdentifier</key>
+  <string>com.devwolf75.streamviv</string>
+  <key>CFBundleName</key>
+  <string>StreamViv</string>
+  <key>NSCameraUsageDescription</key>
+  <string>StreamViv needs camera permission to show video from your USB capture card.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>StreamViv needs microphone permission to play audio from your USB capture card.</string>
+  <!-- The app is a local viewer; it never opens a network connection. -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <false/>
+  </dict>
+</dict>
+</plist>

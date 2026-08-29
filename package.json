@@ -1,0 +1,33 @@
+{
+  "name": "streamviv",
+  "private": true,
+  "version": "2.1.0",
+  "description": "Lightweight cross-platform capture card viewer with rotation, device, resolution and frame-rate control.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "app:dev": "tauri dev",
+    "app:build": "tauri build",
+    "app:build:universal": "tauri build --target universal-apple-darwin",
+    "package:macos": "bash scripts/package-macos.sh",
+    "app:build:linux-container": "bash scripts/build-linux-container.sh",
+    "app:build:windows-container": "bash scripts/build-windows-container.sh",
+    "doctor": "bash scripts/doctor.sh",
+    "test": "node --test \"test/*.test.js\"",
+    "test:bun": "bun test test/",
+    "test:e2e": "bash test/smoke.sh && node test/run-e2e.js"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "@tauri-apps/cli": "^2",
+    "playwright-core": "^1.62.1",
+    "svelte": "^4.2.19",
+    "vite": "^5.4.10"
+  }
+}

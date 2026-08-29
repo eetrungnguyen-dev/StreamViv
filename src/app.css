@@ -1,0 +1,131 @@
+/*
+ * Global styles.
+ *
+ * The upstream project pulled Bulma (~200 KB) off a CDN at runtime, which
+ * meant the UI depended on an internet connection and cost a full CSS
+ * parse on every launch. This file replaces it entirely.
+ */
+
+:root {
+  --bg: #000;
+  --panel: rgba(18, 18, 20, 0.88);
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --text: #f2f2f3;
+  --text-dim: #a9a9b2;
+  --accent: #4c9aff;
+  --danger: #ff6b6b;
+  --radius: 8px;
+  --control-h: 32px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  /* A viewer is not a document: no text selection, no drag ghosts, no
+     rubber-banding, no long-press callout. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
+  height: 100%;
+}
+
+/* Native controls, restyled once instead of importing a framework. */
+select,
+button,
+input[type="range"] {
+  font: inherit;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  height: var(--control-h);
+  padding: 0 8px;
+  cursor: pointer;
+  transition: background-color 120ms linear, border-color 120ms linear;
+}
+
+select {
+  max-width: 220px;
+  appearance: none;
+  padding-right: 22px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+  background-position: calc(100% - 13px) 14px, calc(100% - 8px) 14px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  text-overflow: ellipsis;
+}
+
+/* WebView2 can render the native Windows popup with a light surface even
+   when the page advertises a dark color scheme. Keep the popup rows readable
+   instead of relying on the browser's inherited defaults. */
+select option,
+select optgroup {
+  color: var(--text);
+  background-color: #242529;
+}
+
+select:hover,
+button:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+select:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button[aria-pressed="true"] {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #06121f;
+}
+
+select:disabled,
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+input[type="range"] {
+  appearance: none;
+  width: 84px;
+  height: var(--control-h);
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--text);
+}
