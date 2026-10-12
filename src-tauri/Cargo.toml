@@ -5,6 +5,11 @@ description = "Ultra-lightweight capture card viewer with hardware rotation and 
 authors = ["devwolf75"]
 edition = "2021"
 
+[lib]
+# The `_lib` suffix keeps it from clashing with the bin target on Windows.
+name = "streamviv_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]

@@ -177,6 +177,26 @@ NSIS from the Debian pool, and those binaries need a newer glibc than Ubuntu
 
 ---
 
+## Android
+
+Needs the Android SDK, NDK 27 (`sdkmanager "ndk;27.2.12479018"`), JDK 17 and
+`rustup target add aarch64-linux-android`. Then:
+
+```sh
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17 ANDROID_HOME=~/Library/Android/sdk
+export NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018
+bun tauri android build --apk --target aarch64
+```
+
+The APK comes out unsigned; zipalign and `apksigner sign` it before
+installing. arm64 only, which covers every current phone.
+
+A capture card shows up only if the phone exposes USB video devices through
+Camera2 (`android.hardware.camera.external`); not every phone does. If the
+device list is empty with the card plugged in, that is the phone, not the app.
+
+---
+
 ## Tests
 
 ```sh

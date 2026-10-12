@@ -17,6 +17,8 @@
 //!     this the app builds and starts on Linux and then reports "no capture
 //!     device" forever.
 //!   * **Windows / WebView2** - grants camera access without being asked.
+//!   * **Android / System WebView** - wry's WebChromeClient turns the page's
+//!     request into the runtime CAMERA prompt; the manifest declares it.
 //!
 //! Only the module for the target OS is compiled; the other two do not
 //! exist in the binary.
@@ -162,7 +164,7 @@ mod imp {
     }
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "android"))]
 mod imp {
     /// No menu bar is created on this platform, so there is nothing to trim.
     pub fn configure_builder<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
