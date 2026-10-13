@@ -46,7 +46,9 @@
   }
 </script>
 
-<svelte:window on:blur={close} on:resize={close} />
+<!-- Resize re-places rather than closes: phones resize under an open menu
+     (system bars, folding), and a menu that vanishes reads as broken. -->
+<svelte:window on:blur={close} on:resize={() => visible && menuEl && place(x, y)} />
 
 {#if visible}
   <!-- Swallows the dismissing click so it cannot also reach the video. -->

@@ -1,5 +1,6 @@
 import { readable } from "svelte/store";
 import { IDLE_TIMEOUT_MS } from "./constants.js";
+import { NATIVE_UVC } from "./uvc.js";
 
 /**
  * Pointer-idle store. `true` means "the user has not moved the mouse for
@@ -18,6 +19,13 @@ export const idle = readable(false, (set) => {
   let isIdle = false;
 
   const goIdle = () => {
+    // Android's <select> picker is a separate dialog that swallows every
+    // touch, so a still page there means "choosing", not idle - and fading
+    // the toolbar would dismiss the picker from under the user's finger.
+    if (NATIVE_UVC && document.activeElement?.tagName === "SELECT") {
+      timer = setTimeout(goIdle, IDLE_TIMEOUT_MS);
+      return;
+    }
     isIdle = true;
     set(true);
   };
@@ -31,7 +39,9 @@ export const idle = readable(false, (set) => {
     timer = setTimeout(goIdle, IDLE_TIMEOUT_MS);
   };
 
-  const events = ["pointermove", "pointerdown", "wheel", "keydown", "touchstart"];
+  // "change": a choice made in a native picker is input too, though none of
+  // the touches that made it reached the page.
+  const events = ["pointermove", "pointerdown", "wheel", "keydown", "touchstart", "change"];
   for (const type of events) {
     window.addEventListener(type, wake, { passive: true });
   }

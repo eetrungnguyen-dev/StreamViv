@@ -83,7 +83,7 @@ export const TOOLBAR_HIDDEN = "hidden";
 export const TOOLBAR_MODES = [
   { label: "Auto-hide", value: TOOLBAR_AUTO, hint: "fades after 3s of stillness" },
   { label: "Always on", value: TOOLBAR_PINNED, hint: "stays up" },
-  { label: "Hidden", value: TOOLBAR_HIDDEN, hint: "never shown - T or right-click to bring it back" },
+  { label: "Hidden", value: TOOLBAR_HIDDEN, hint: "never shown - T, right-click or long-press to bring it back" },
 ];
 
 export function toolbarModeByValue(value) {

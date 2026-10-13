@@ -13,6 +13,13 @@
   } from "../lib/constants.js";
   import { settings, updateSettings } from "../lib/settings.js";
   import { IS_MAC } from "../lib/platform.js";
+  import { NATIVE_UVC } from "../lib/uvc.js";
+
+  // Android: a focused <select> holds the toolbar up (lib/idle.js); once a
+  // choice is made, let go so it can fade again.
+  function releasePicker(event) {
+    if (NATIVE_UVC && event.target.tagName === "SELECT") event.target.blur();
+  }
 
   export let videoDevices = [];
   export let audioDevices = [];
@@ -53,7 +60,7 @@
   }
 </script>
 
-<div class="toolbar" class:visible aria-hidden={!visible}>
+<div class="toolbar" class:visible aria-hidden={!visible} on:change={releasePicker}>
   <div class="group">
     <label for="videoDevice">Video</label>
     <select
