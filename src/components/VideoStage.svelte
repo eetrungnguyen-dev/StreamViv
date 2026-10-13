@@ -1,6 +1,7 @@
 <script>
   import { onMount, tick } from "svelte";
   import { computeTransform } from "../lib/transform.js";
+  import { layoutUvc } from "../lib/uvc.js";
 
   /** @type {MediaStream|null} */
   export let stream = null;
@@ -45,6 +46,20 @@
       mirror,
     });
     transform = t.transform;
+    if (stream?.native && t.baseW) {
+      // Android: the picture is a native view behind the page; give it the
+      // box <video> would paint into, and the same transform as numbers.
+      const r = stageEl.getBoundingClientRect();
+      layoutUvc({
+        x: r.left + (stageW - t.baseW) / 2,
+        y: r.top + (stageH - t.baseH) / 2,
+        w: t.baseW,
+        h: t.baseH,
+        rotation,
+        sx: t.scaleX,
+        sy: t.scaleY,
+      });
+    }
   }
 
   // Any change to these inputs needs a new transform.
@@ -59,6 +74,13 @@
   $: if (videoEl && stream !== undefined) attach(stream);
 
   async function attach(s) {
+    if (s?.native) {
+      videoEl.srcObject = null;
+      videoWidth = s.width;
+      videoHeight = s.height;
+      schedule();
+      return;
+    }
     if (videoEl.srcObject === s) return;
     videoEl.srcObject = s;
     videoWidth = 0;
@@ -99,6 +121,7 @@
   <!-- svelte-ignore a11y-media-has-caption -->
   <video
     bind:this={videoEl}
+    class:hidden={!stream || stream.native}
     style:transform
     playsinline
     autoplay
@@ -149,6 +172,10 @@
     backface-visibility: hidden;
     transform: translate(-50%, -50%);
     background: #000;
+  }
+
+  video.hidden {
+    visibility: hidden;
   }
 
   video::-webkit-media-controls {

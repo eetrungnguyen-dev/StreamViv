@@ -191,9 +191,13 @@ bun tauri android build --apk --target aarch64
 The APK comes out unsigned; zipalign and `apksigner sign` it before
 installing. arm64 only, which covers every current phone.
 
-A capture card shows up only if the phone exposes USB video devices through
-Camera2 (`android.hardware.camera.external`); not every phone does. If the
-device list is empty with the card plugged in, that is the phone, not the app.
+Video does not go through getUserMedia on Android: the System WebView only
+sees cameras Camera2 exposes, and most phones expose no USB ones. The card is
+opened natively over the USB host API (UVCAndroid: libusb + libuvc) and drawn
+in a TextureView behind the transparent page - see `UvcBridge.kt` and
+`src/lib/uvc.js`. Its native libs are 4 KB page aligned, so a 16 KB-page
+kernel runs the app in Android's compatibility mode. Audio still uses
+getUserMedia.
 
 ---
 

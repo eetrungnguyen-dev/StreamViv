@@ -81,6 +81,21 @@ test("mirror only flips X, keeping the same footprint", () => {
   expect(flipped.transform).toContain("scale(-");
 });
 
+test("numeric form matches the footprint (Android native view)", () => {
+  // A baseW x baseH box scaled by |scaleX| x |scaleY| then rotated must
+  // land on the same screen rectangle the CSS transform produces.
+  for (const rotation of [0, 90]) {
+    for (const fit of ["contain", "cover", "stretch"]) {
+      const t = computeTransform({ ...stage, ...hd, rotation, fit, aspect: 4 / 3, mirror: true });
+      const w = t.baseW * Math.abs(t.scaleX);
+      const h = t.baseH * Math.abs(t.scaleY);
+      expect(Math.round(rotation ? h : w)).toBe(Math.round(t.contentW));
+      expect(Math.round(rotation ? w : h)).toBe(Math.round(t.contentH));
+      expect(t.scaleX < 0).toBe(true);
+    }
+  }
+});
+
 test("no stream yet is a safe no-op", () => {
   const t = computeTransform({ stageW: 0, stageH: 0, videoW: 0, videoH: 0 });
   expect(t.transform).toBe("translate(-50%, -50%)");

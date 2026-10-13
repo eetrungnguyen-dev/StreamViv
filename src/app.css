@@ -23,6 +23,14 @@
   box-sizing: border-box;
 }
 
+/* Android draws the capture card natively, behind the page (lib/uvc.js). */
+.native-uvc,
+.native-uvc body,
+.native-uvc main,
+.native-uvc .stage {
+  background: transparent !important;
+}
+
 html,
 body {
   margin: 0;

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Any device with a USB Video Class interface. Android matches interface
+     classes too, so composite cards (device class 0xEF) are included. -->
+<resources>
+    <usb-device class="14" />
+</resources>

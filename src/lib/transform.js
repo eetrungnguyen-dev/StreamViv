@@ -90,6 +90,12 @@ export function computeTransform({
     transform: parts.join(" "),
     contentW: quarterTurn ? localH : localW,
     contentH: quarterTurn ? localW : localH,
+    // The same transform as numbers, for a native view (Android) that
+    // draws the picture in a baseW x baseH box centred on the stage.
+    baseW,
+    baseH,
+    scaleX: sx * anamorphic,
+    scaleY: sy,
   };
 }
 

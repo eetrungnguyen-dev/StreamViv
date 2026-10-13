@@ -8,6 +8,7 @@
  */
 
 import { IS_MAC } from "./platform.js";
+import { NATIVE_UVC } from "./uvc.js";
 
 export const isTauri =
   typeof window !== "undefined" &&
@@ -16,7 +17,8 @@ export const isTauri =
 let windowPromise = null;
 
 async function appWindow() {
-  if (!isTauri) return null;
+  // Mobile Tauri has no window plugin; there is no window to decorate.
+  if (!isTauri || NATIVE_UVC) return null;
   if (!windowPromise) {
     windowPromise = import("@tauri-apps/api/window")
       .then((m) => m.getCurrentWindow())

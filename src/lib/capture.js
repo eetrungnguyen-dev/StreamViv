@@ -1,5 +1,6 @@
 import { AUTO, resolutionByValue, frameRateByValue } from "./constants.js";
 import { LINUX, MACOS, PLATFORM, WINDOWS } from "./platform.js";
+import { NATIVE_UVC, listUvcDevices, openUvcStream } from "./uvc.js";
 
 /**
  * Everything that touches getUserMedia / enumerateDevices.
@@ -66,6 +67,18 @@ function unsupportedMessage(platform = PLATFORM) {
  */
 export async function primePermissions() {
   let stream = null;
+  if (NATIVE_UVC) {
+    // Video is USB, asked for when the card is opened; asking for the
+    // camera here would only prompt for the phone's own lenses.
+    try {
+      stream = await mediaDevices().getUserMedia({ audio: true });
+    } catch {
+      /* audio is optional */
+    } finally {
+      stopStream(stream);
+    }
+    return;
+  }
   try {
     stream = await mediaDevices().getUserMedia({ video: true, audio: true });
   } catch (err) {
@@ -83,10 +96,10 @@ export async function primePermissions() {
 
 export async function listDevices() {
   const devices = await mediaDevices().enumerateDevices();
-  const video = [];
+  const video = NATIVE_UVC ? listUvcDevices() : [];
   const audio = [];
   for (const d of devices) {
-    if (d.kind === "videoinput") video.push(plain(d));
+    if (d.kind === "videoinput" && !NATIVE_UVC) video.push(plain(d));
     else if (d.kind === "audioinput") audio.push(plain(d));
   }
   return { video, audio };
@@ -199,6 +212,29 @@ export function buildVideoLadder(deviceId, resolutionKey, frameRateKey, nativeFr
  * UI can tell the user "you asked for 1080p60, you got 1080p30".
  */
 export async function openVideoStream({ deviceId, resolution, frameRate, nativeFrames }) {
+  if (NATIVE_UVC) {
+    // The native side does its own fallback: the requested mode if the card
+    // lists it, else its best MJPEG mode.
+    const res = resolutionByValue(resolution);
+    const rate = frameRateByValue(frameRate);
+    try {
+      const { stream, info } = await openUvcStream({
+        deviceId,
+        width: res.width,
+        height: res.height,
+        fps: rate.fps,
+      });
+      return {
+        stream,
+        applied: describeTrack(stream.getVideoTracks()[0]),
+        tier: `USB ${info.format}`,
+        degraded: info.degraded,
+        attempts: [],
+      };
+    } catch (err) {
+      throw new MediaError(err.message, err);
+    }
+  }
   const ladder = buildVideoLadder(deviceId, resolution, frameRate, nativeFrames);
   const attempts = [];
   let lastError = null;
