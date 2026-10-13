@@ -2,6 +2,8 @@
   import { onMount, tick } from "svelte";
   import { computeTransform } from "../lib/transform.js";
   import { layoutUvc } from "../lib/uvc.js";
+  import { FULL_FRAME, normalizeCrop } from "../lib/crop.js";
+  import CropEditor from "./CropEditor.svelte";
 
   /** @type {MediaStream|null} */
   export let stream = null;
@@ -11,6 +13,10 @@
   export let mirror = false;
   export let muted = true;
   export let hideCursor = false;
+  /** The part of the frame to show (fractions); see lib/crop.js. */
+  export let crop = FULL_FRAME;
+  /** Show the whole frame with the crop editor over it. */
+  export let editingCrop = false;
 
   /** Intrinsic frame size, published upwards for the stats overlay. */
   export let videoWidth = 0;
@@ -21,6 +27,11 @@
   let stageW = 0;
   let stageH = 0;
   let transform = "translate(-50%, -50%)";
+  // The cropped picture's box (`boxW` x `boxH`, 0 = not known yet) and where
+  // the whole video sits inside it so that only the crop shows.
+  let boxW = 0;
+  let boxH = 0;
+  let view = { w: 0, h: 0, x: 0, y: 0 };
   let frame = 0;
 
   // Recomputing is pure arithmetic, but the *write* to style.transform is
@@ -35,20 +46,28 @@
   }
 
   function apply() {
+    // A crop is just a smaller source: the fit/rotate maths runs on the
+    // cropped size, and the frame box it produces clips the full video.
+    const c = normalizeCrop(crop);
     const t = computeTransform({
       stageW,
       stageH,
-      videoW: videoWidth,
-      videoH: videoHeight,
+      videoW: videoWidth * c.w,
+      videoH: videoHeight * c.h,
       rotation,
       fit,
       aspect,
       mirror,
     });
     transform = t.transform;
+    boxW = t.baseW;
+    boxH = t.baseH;
+    view = t.baseW
+      ? { w: t.baseW / c.w, h: t.baseH / c.h, x: (-c.x * t.baseW) / c.w, y: (-c.y * t.baseH) / c.h }
+      : { w: 0, h: 0, x: 0, y: 0 };
     if (stream?.native && t.baseW) {
       // Android: the picture is a native view behind the page; give it the
-      // box <video> would paint into, and the same transform as numbers.
+      // box the frame occupies, and the same transform and crop as numbers.
       const r = stageEl.getBoundingClientRect();
       layoutUvc({
         x: r.left + (stageW - t.baseW) / 2,
@@ -58,12 +77,13 @@
         rotation,
         sx: t.scaleX,
         sy: t.scaleY,
+        crop: c,
       });
     }
   }
 
   // Any change to these inputs needs a new transform.
-  $: rotation, fit, aspect, mirror, stageW, stageH, videoWidth, videoHeight, schedule();
+  $: rotation, fit, aspect, mirror, crop, stageW, stageH, videoWidth, videoHeight, schedule();
 
   function onMeta() {
     videoWidth = videoEl.videoWidth;
@@ -118,11 +138,22 @@
      the F / F11 shortcut and the toolbar button, so there is no keyboard trap. -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="stage" bind:this={stageEl} class:hide-cursor={hideCursor} on:dblclick>
+  <!-- The frame is the (cropped) picture's box; it carries the transform and
+       clips the video, which is sized and offset so only the crop shows. -->
+  <div
+    class="frame"
+    style:transform
+    style:width={boxW ? `${boxW}px` : null}
+    style:height={boxH ? `${boxH}px` : null}
+  >
   <!-- svelte-ignore a11y-media-has-caption -->
   <video
     bind:this={videoEl}
     class:hidden={!stream || stream.native}
-    style:transform
+    style:width={view.w ? `${view.w}px` : null}
+    style:height={view.h ? `${view.h}px` : null}
+    style:left={view.w ? `${view.x}px` : null}
+    style:top={view.h ? `${view.y}px` : null}
     playsinline
     autoplay
     {muted}
@@ -132,6 +163,21 @@
     on:pause={() => videoEl && videoEl.play().catch(() => {})}
     on:click={() => videoEl && videoEl.paused && videoEl.play().catch(() => {})}
   />
+  </div>
+  {#if editingCrop && boxW}
+    <!-- While editing, the whole frame is shown unrotated, so the box above
+         is exactly the frame on screen. -->
+    <CropEditor
+      left={(stageW - boxW) / 2}
+      top={(stageH - boxH) / 2}
+      width={boxW}
+      height={boxH}
+      frameW={videoWidth}
+      frameH={videoHeight}
+      on:apply
+      on:cancel
+    />
+  {/if}
   {#if !stream}
     <div class="placeholder">
       <slot name="placeholder" />
@@ -155,15 +201,16 @@
     cursor: none;
   }
 
-  video {
+  .frame {
     position: absolute;
     top: 50%;
     left: 50%;
+    /* Until the frame size is known the box is the stage, and `contain`
+       below gives the usual starting rectangle. Afterwards it is exactly
+       the (cropped) picture, which transform.js fits from. */
     width: 100%;
     height: 100%;
-    /* The element box never changes; `contain` gives us a predictable
-       starting rectangle that transform.js does the real fitting from. */
-    object-fit: contain;
+    overflow: hidden;
     transform-origin: 50% 50%;
     /* The three lines that make rotation free on an HD 4400: keep the
        layer promoted, tell the compositor a transform is coming, and stop
@@ -171,6 +218,15 @@
     will-change: transform;
     backface-visibility: hidden;
     transform: translate(-50%, -50%);
+  }
+
+  video {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     background: #000;
   }
 

@@ -12,6 +12,7 @@
  */
 
 import { FIT_MODES, toolbarModeByValue } from "./constants.js";
+import { isFullFrame } from "./crop.js";
 
 /**
  * @param {object} s current settings
@@ -30,6 +31,8 @@ export function contextMenuItems(s) {
     { id: "rotate-ccw", label: "Rotate left", accelerator: "Shift+R" },
     { id: "cycle-fit", label: `Fit: ${fit.label}`, accelerator: "C" },
     { id: "toggle-mirror", label: "Mirror", accelerator: "", checked: s.mirror },
+    { id: "edit-crop", label: "Crop…", accelerator: "X" },
+    ...(isFullFrame(s.crop) ? [] : [{ id: "reset-crop", label: "Reset crop", accelerator: "" }]),
     { separator: true },
     { id: "fullscreen", label: "Fullscreen", accelerator: "F" },
     { id: "toggle-decorations", label: "Title bar", accelerator: "D", checked: s.decorations },

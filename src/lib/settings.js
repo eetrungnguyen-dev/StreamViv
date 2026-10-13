@@ -1,5 +1,6 @@
 import { writable, get } from "svelte/store";
 import { AUTO, TOOLBAR_AUTO, TOOLBAR_PINNED } from "./constants.js";
+import { FULL_FRAME, normalizeCrop } from "./crop.js";
 
 /**
  * Persistent configuration.
@@ -27,6 +28,8 @@ export const DEFAULTS = Object.freeze({
   fit: "contain", // contain | cover | stretch
   aspect: AUTO, // key into ASPECTS
   mirror: false,
+  // The part of the frame to show, as fractions - see lib/crop.js.
+  crop: FULL_FRAME,
 
   volume: 1,
   muted: false,
@@ -74,6 +77,8 @@ function migrate(merged, parsed) {
   if (parsed.toolbarMode === undefined && typeof parsed.pinToolbar === "boolean") {
     merged.toolbarMode = parsed.pinToolbar ? TOOLBAR_PINNED : TOOLBAR_AUTO;
   }
+  // The type check above only knows it is an object.
+  merged.crop = normalizeCrop(merged.crop);
   return merged;
 }
 

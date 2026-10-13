@@ -99,9 +99,9 @@ export async function openUvcStream({ deviceId, width, height, fps }) {
 }
 
 /** Position the native picture; numbers are CSS px and get scaled here. */
-export function layoutUvc({ x, y, w, h, rotation, sx, sy }) {
+export function layoutUvc({ x, y, w, h, rotation, sx, sy, crop }) {
   const k = window.devicePixelRatio || 1;
   bridge.layout(
-    JSON.stringify({ x: x * k, y: y * k, w: Math.round(w * k), h: Math.round(h * k), rotation, sx, sy })
+    JSON.stringify({ x: x * k, y: y * k, w: Math.round(w * k), h: Math.round(h * k), rotation, sx, sy, crop })
   );
 }

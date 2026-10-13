@@ -11,6 +11,7 @@
   import { matchBinding } from "./lib/hotkeys.js";
   import { setFullscreen, isFullscreen, setDecorations } from "./lib/tauri.js";
   import { nextRotation } from "./lib/transform.js";
+  import { FULL_FRAME } from "./lib/crop.js";
   import {
     aspectByValue,
     FIT_MODES,
@@ -45,6 +46,8 @@
   let bannerKind = "error";
   let showHelp = false;
   let menuOpen = false;
+  // The crop editor shows the whole frame, unrotated, until Apply/Cancel.
+  let editingCrop = false;
   let menuX = 0;
   let menuY = 0;
 
@@ -305,6 +308,13 @@
       case "cycle-toolbar":
         cycleToolbar();
         break;
+      case "edit-crop":
+        if (!videoStream) say("Nothing to crop yet - the capture has to be running first.", "info");
+        else editingCrop = !editingCrop;
+        break;
+      case "reset-crop":
+        updateSettings({ crop: FULL_FRAME });
+        break;
       case "toggle-stats":
         updateSettings({ showStats: !currentSettings().showStats });
         break;
@@ -375,10 +385,17 @@
 <main>
   <VideoStage
     stream={videoStream}
-    rotation={$settings.rotation}
-    fit={$settings.fit}
-    aspect={aspectRatio}
-    mirror={$settings.mirror}
+    rotation={editingCrop ? 0 : $settings.rotation}
+    fit={editingCrop ? "contain" : $settings.fit}
+    aspect={editingCrop ? 0 : aspectRatio}
+    mirror={editingCrop ? false : $settings.mirror}
+    crop={editingCrop ? FULL_FRAME : $settings.crop}
+    {editingCrop}
+    on:apply={(e) => {
+      updateSettings({ crop: e.detail });
+      editingCrop = false;
+    }}
+    on:cancel={() => (editingCrop = false)}
     muted={true}
     hideCursor={$idle && $settings.toolbarMode !== TOOLBAR_PINNED}
     bind:videoWidth
@@ -422,7 +439,8 @@
     {videoDevices}
     {audioDevices}
     {busy}
-    visible={chromeVisible}
+    visible={chromeVisible && !editingCrop}
+    on:crop={() => runCommand("edit-crop")}
     on:restart={(e) => (e.detail.what === "audio" ? startAudio() : startVideo())}
     on:reconnect={reconnect}
     on:fullscreen={() => toggleAppFullscreen()}

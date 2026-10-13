@@ -33,6 +33,7 @@ export function bindingsFor(platform = PLATFORM) {
     { keys: "I", action: "Show stream info" },
     { keys: "M", action: "Mute / unmute" },
     { keys: "C", action: "Cycle fit mode (fit / fill / stretch)" },
+    { keys: "X", action: "Crop: drag the part of the picture to show (Enter applies)" },
     { keys: "N", action: "Reconnect the capture device" },
     { keys: "?", action: "Toggle this help" },
   ];
@@ -114,6 +115,9 @@ export function matchBinding(event, platform = PLATFORM) {
     case "n":
     case "N":
       return "reconnect";
+    case "x":
+    case "X":
+      return "edit-crop";
     case "?":
       return "toggle-help";
     default:

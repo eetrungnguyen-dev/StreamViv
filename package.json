@@ -1,7 +1,7 @@
 {
   "name": "streamviv",
   "private": true,
-  "version": "2.1.3",
+  "version": "2.2.0",
   "description": "Lightweight cross-platform capture card viewer with rotation, device, resolution and frame-rate control.",
   "type": "module",
   "scripts": {

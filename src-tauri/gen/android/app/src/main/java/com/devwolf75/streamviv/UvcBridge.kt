@@ -2,6 +2,7 @@ package com.devwolf75.streamviv
 
 import android.app.Activity
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDevice
@@ -121,6 +122,17 @@ class UvcBridge(private val activity: Activity, private val webView: WebView) :
             tv.rotation = o.getDouble("rotation").toFloat()
             tv.scaleX = o.getDouble("sx").toFloat()
             tv.scaleY = o.getDouble("sy").toFloat()
+            // Crop: blow the frame up inside the view so only the crop
+            // rectangle lands in it (the view clips the rest).
+            val c = o.optJSONObject("crop")
+            val cx = c?.optDouble("x", 0.0)?.toFloat() ?: 0f
+            val cy = c?.optDouble("y", 0.0)?.toFloat() ?: 0f
+            val cw = c?.optDouble("w", 1.0)?.toFloat() ?: 1f
+            val ch = c?.optDouble("h", 1.0)?.toFloat() ?: 1f
+            tv.setTransform(Matrix().apply {
+                setScale(1f / cw, 1f / ch)
+                postTranslate(-cx * w / cw, -cy * h / ch)
+            })
         }
     }
 

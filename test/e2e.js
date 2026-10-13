@@ -23,8 +23,8 @@ async function waitForTransform(page, exprSrc, label) {
   try {
     await page.waitForFunction(
       (src) => {
-        const v = document.querySelector("video");
-        return !!v && new Function("t", "return (" + src + ")")(v.style.transform);
+        const f = document.querySelector(".frame");
+        return !!f && new Function("t", "return (" + src + ")")(f.style.transform);
       },
       exprSrc,
       { timeout: 3000, polling: 50 }
@@ -59,23 +59,27 @@ async function waitForTransform(page, exprSrc, label) {
   const readState = () =>
     page.evaluate(() => {
       const v = document.querySelector("video");
+      // The transform lives on the frame that clips the (cropped) video.
+      const f = document.querySelector(".frame");
       return {
-        transform: getComputedStyle(v).transform,
-        inline: v.style.transform,
+        transform: getComputedStyle(f).transform,
+        inline: f.style.transform,
         vw: v.videoWidth,
         vh: v.videoHeight,
         hasStream: !!v.srcObject,
         paused: v.paused,
-        box: { width: v.offsetWidth, height: v.offsetHeight },
+        box: { width: f.offsetWidth, height: f.offsetHeight },
         content: (() => {
           // Independent check: take the object-fit content box, push it
           // through the *computed* matrix, and see what the user actually
           // sees. Deliberately does not reuse transform.js.
-          const a = v.videoWidth / v.videoHeight;
+          // The frame box is the (cropped) picture, so its aspect is the
+          // picture's; with no crop it equals the video's.
+          const a = f.offsetWidth / f.offsetHeight;
           if (!a) return { width: 0, height: 0 };
-          const cw = Math.min(v.offsetWidth, v.offsetHeight * a);
+          const cw = Math.min(f.offsetWidth, f.offsetHeight * a);
           const ch = cw / a;
-          const m = new DOMMatrix(getComputedStyle(v).transform);
+          const m = new DOMMatrix(getComputedStyle(f).transform);
           const lin = (x, y) => [m.a * x + m.c * y, m.b * x + m.d * y];
           const pts = [[-cw / 2, -ch / 2], [cw / 2, -ch / 2], [cw / 2, ch / 2], [-cw / 2, ch / 2]]
             .map(([x, y]) => lin(x, y));
@@ -90,7 +94,7 @@ async function waitForTransform(page, exprSrc, label) {
         toolbarOpacity: getComputedStyle(document.querySelector(".toolbar")).opacity,
         bodyScrollW: document.body.scrollWidth,
         objectFit: getComputedStyle(v).objectFit,
-        willChange: getComputedStyle(v).willChange,
+        willChange: getComputedStyle(f).willChange,
       };
     });
 
@@ -234,6 +238,47 @@ async function waitForTransform(page, exprSrc, label) {
   s = await readState();
   check("C returns to fit/letterbox", near(s.content.width, 506.25), s.inline);
 
+  // --- Crop: X edits over the whole frame, typed 800x600 then fills ---
+  await page.keyboard.press("x");
+  await page.waitForTimeout(250);
+  check("X opens the crop editor", (await page.locator(".area").count()) === 1);
+  const area = await page.locator(".area").boundingBox();
+  check("editor shows the whole frame unrotated",
+    !!area && near(area.width, 1600, 1) && near(area.height, 900, 1),
+    area ? `${r2(area.width)}x${r2(area.height)}` : "none");
+  await page.mouse.move(area.x + area.width * 0.25, area.y + area.height * 0.25);
+  await page.mouse.down();
+  await page.mouse.move(area.x + area.width * 0.5, area.y + area.height * 0.75, { steps: 6 });
+  await page.mouse.up();
+  let sizeLabel = (await page.locator(".size").innerText()).trim();
+  check("dragging draws a box (in source pixels)", sizeLabel === "480 × 540", sizeLabel);
+  await page.locator(".panel input").nth(0).fill("800");
+  await page.locator(".panel input").nth(0).dispatchEvent("change");
+  await page.locator(".panel input").nth(1).fill("600");
+  await page.locator(".panel input").nth(1).dispatchEvent("change");
+  sizeLabel = (await page.locator(".size").innerText()).trim();
+  check("typing 800 x 600 sets the box exactly", sizeLabel === "800 × 600", sizeLabel);
+  await page.screenshot({ path: `${OUT}/shot-crop-editor.png` });
+  await page.getByRole("button", { name: "Apply" }).click();
+  await page.waitForTimeout(300);
+  s = await readState();
+  check("Apply closes the editor", (await page.locator(".area").count()) === 0);
+  check("4:3 crop at 90deg fills the height (675x900)",
+    near(s.content.width, 675) && near(s.content.height, 900),
+    `${r2(s.content.width)}x${r2(s.content.height)}`);
+  await page.screenshot({ path: `${OUT}/shot-crop.png` });
+  await page.waitForTimeout(300); // settings writes are debounced
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("ccv.settings.v2") || "{}").crop);
+  check("crop is persisted", !!saved && saved.w < 1, JSON.stringify(saved));
+  // Reset through the same command the context menu uses.
+  await page.keyboard.press("x");
+  await page.waitForTimeout(150);
+  await page.getByRole("button", { name: "Full frame" }).click();
+  await page.getByRole("button", { name: "Apply" }).click();
+  await page.waitForTimeout(300);
+  s = await readState();
+  check("Full frame restores the uncropped picture", near(s.content.width, 506.25), s.inline);
+
   // --- Frame-rate fallback ladder, end to end ---
   await page.mouse.move(800, 450);
   await page.waitForTimeout(150);
@@ -270,8 +315,8 @@ async function waitForTransform(page, exprSrc, label) {
   await page.waitForTimeout(500);
   s = await readState();
   check("no horizontal page overflow at 360px", s.bodyScrollW <= 360, `scrollWidth=${s.bodyScrollW}`);
-  check("video element still matches the narrow stage layout box",
-    s.box.width === 360 && s.box.height === 740, `${s.box.width}x${s.box.height}`);
+  check("frame box is the picture's contain box on the narrow stage",
+    s.box.width === 360 && Math.abs(s.box.height - 202.5) <= 1, `${s.box.width}x${s.box.height}`);
   check("picture stays inside the narrow stage (no crop, no overflow)",
     s.content.width <= s.stage.width + 1 && s.content.height <= s.stage.height + 1,
     `content ${r2(s.content.width)}x${r2(s.content.height)} in stage ${r2(s.stage.width)}x${r2(s.stage.height)}`);
