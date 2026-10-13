@@ -199,6 +199,10 @@ in a TextureView behind the transparent page - see `UvcBridge.kt` and
 kernel runs the app in Android's compatibility mode. Audio still uses
 getUserMedia.
 
+The launcher icon is an adaptive icon generated from `src-tauri/icons/icon.png`
+(needs Pillow): `python3 scripts/make-android-icon.py src-tauri/icons/icon.png
+src-tauri/gen/android/app/src/main/res preview.png`.
+
 ---
 
 ## Tests
