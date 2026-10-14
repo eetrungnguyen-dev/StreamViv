@@ -167,6 +167,14 @@ test("every native menu accelerator is one the parser will accept", () => {
   }
 });
 
+test("the touch menu names gestures, never keys, and drops the title bar", () => {
+  const items = contextMenuItems({ fit: "contain", toolbarMode: "auto" }, true).filter((i) => !i.separator);
+  expect(items.every((i) => !i.accelerator)).toBe(true);
+  expect(items.some((i) => i.id === "toggle-decorations")).toBe(false);
+  expect(items.find((i) => i.id === "fullscreen").hint).toBe("double-tap");
+  for (const i of items) expect(HANDLED_COMMANDS.includes(i.id)).toBe(true);
+});
+
 test("every menu item id is a real command", () => {
   // Menu ids double as hotkey command names; a typo would produce an item
   // that opens the menu, closes it, and does nothing.

@@ -1,5 +1,7 @@
 <script>
   import { BINDINGS } from "../lib/hotkeys.js";
+  import { GESTURES } from "../lib/gestures.js";
+  import { NATIVE_UVC } from "../lib/uvc.js";
   import { platformLabel } from "../lib/platform.js";
 
   // Which webview we are in decides how the picture is negotiated, so it
@@ -50,8 +52,8 @@
 
 {#if showHelp}
   <div class="card help">
-    <h2>Shortcuts</h2>
-    {#each BINDINGS as b}
+    <h2>{NATIVE_UVC ? "Gestures" : "Shortcuts"}</h2>
+    {#each NATIVE_UVC ? GESTURES : BINDINGS as b}
       <div class="row"><span>{b.keys}</span><b>{b.action}</b></div>
     {/each}
   </div>
@@ -69,14 +71,29 @@
     pointer-events: none;
   }
 
+  /* --safe-*: system bars on Android (lib/uvc.js), unset elsewhere. */
   .stats {
-    top: 12px;
-    left: 12px;
+    top: calc(12px + var(--safe-top, 0px));
+    left: calc(12px + var(--safe-left, 0px));
   }
 
   .help {
-    top: 12px;
-    right: 12px;
+    top: calc(12px + var(--safe-top, 0px));
+    right: calc(12px + var(--safe-right, 0px));
+  }
+
+  /* On a phone the card is nearly full width and would sit under the
+     banner; centre it instead. */
+  @media (max-width: 720px) {
+    .help {
+      top: 50%;
+      left: 50%;
+      right: auto;
+      /* left: 50% would otherwise cap the shrink-to-fit width at half. */
+      width: min(420px, calc(100% - 24px));
+      box-sizing: border-box;
+      transform: translate(-50%, -50%);
+    }
   }
 
   h2 {

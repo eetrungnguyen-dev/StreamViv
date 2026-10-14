@@ -31,6 +31,26 @@
   background: transparent !important;
 }
 
+/* Touches on the picture are gestures (lib/gestures.js), never a page
+   scroll or zoom. */
+.native-uvc .stage {
+  touch-action: none;
+}
+
+/* Finger-sized controls on touch screens (about 40px, near the 48dp
+   Android guideline without making the toolbar a wall). */
+@media (pointer: coarse) {
+  select,
+  button,
+  input[type="number"] {
+    min-height: 40px;
+  }
+
+  input[type="range"] {
+    height: 40px;
+  }
+}
+
 html,
 body {
   margin: 0;

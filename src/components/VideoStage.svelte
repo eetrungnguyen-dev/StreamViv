@@ -137,7 +137,16 @@
 <!-- The stage is a passive surface; double-click is a convenience duplicate of
      the F / F11 shortcut and the toolbar button, so there is no keyboard trap. -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="stage" bind:this={stageEl} class:hide-cursor={hideCursor} on:dblclick>
+<div
+  class="stage"
+  bind:this={stageEl}
+  class:hide-cursor={hideCursor}
+  on:dblclick
+  on:pointerdown
+  on:pointermove
+  on:pointerup
+  on:pointercancel
+>
   <!-- The frame is the (cropped) picture's box; it carries the transform and
        clips the video, which is sized and offset so only the crop shows. -->
   <div

@@ -13,6 +13,10 @@ import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.serenegiant.usb.Size
 import com.serenegiant.usb.USBMonitor
 import com.serenegiant.usb.UVCCamera
@@ -54,9 +58,24 @@ class UvcBridge(private val activity: Activity, private val webView: WebView) :
     @Volatile private var surface: SurfaceTexture? = null
     private var surfaceReady = CountDownLatch(1)
 
+    // System bar + cutout insets in CSS px, for the page's overlays: the app
+    // is edge-to-edge, so the page runs under the status and gesture bars.
+    @Volatile private var insets = JSONObject()
+
     init {
         monitor.register()
+        ViewCompat.setOnApplyWindowInsetsListener(webView) { _, wi ->
+            val i = wi.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val d = activity.resources.displayMetrics.density
+            insets = JSONObject().put("top", i.top / d).put("right", i.right / d)
+                .put("bottom", i.bottom / d).put("left", i.left / d)
+            emit(JSONObject().put("type", "insets").put("value", insets))
+            wi
+        }
     }
+
+    @JavascriptInterface
+    fun insets(): String = insets.toString()
 
     fun destroy() {
         handler.post {
@@ -99,6 +118,19 @@ class UvcBridge(private val activity: Activity, private val webView: WebView) :
     @JavascriptInterface
     fun close() {
         handler.post { closeCamera() }
+    }
+
+    /**
+     * Immersive fullscreen: the system bars go away until swiped back in.
+     * Not camera-related, but this is the page's one native bridge.
+     */
+    @JavascriptInterface
+    fun fullscreen(on: Boolean) {
+        activity.runOnUiThread {
+            val c = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (on) c.hide(WindowInsetsCompat.Type.systemBars()) else c.show(WindowInsetsCompat.Type.systemBars())
+        }
     }
 
     /** Geometry in physical px, mirroring the CSS transform of the <video>. */

@@ -8,7 +8,7 @@
  */
 
 import { IS_MAC } from "./platform.js";
-import { NATIVE_UVC } from "./uvc.js";
+import { NATIVE_UVC, isImmersive, setImmersive } from "./uvc.js";
 
 export const isTauri =
   typeof window !== "undefined" &&
@@ -50,6 +50,10 @@ let macFullscreen = false;
  * what you want from a picture you are watching next to something else.
  */
 export async function setFullscreen(on) {
+  if (NATIVE_UVC) {
+    setImmersive(on);
+    return on;
+  }
   const win = await appWindow();
   if (win) {
     if (IS_MAC) {
@@ -73,6 +77,7 @@ export async function setFullscreen(on) {
 }
 
 export async function isFullscreen() {
+  if (NATIVE_UVC) return isImmersive();
   const win = await appWindow();
   if (win) {
     if (IS_MAC) return macFullscreen;

@@ -7,7 +7,9 @@
   import ContextMenu from "./components/ContextMenu.svelte";
   import { listenForMenuCommands, showNativeContextMenu } from "./lib/context-menu.js";
   import { settings, updateSettings, flushSettings, currentSettings } from "./lib/settings.js";
-  import { idle } from "./lib/idle.js";
+  import { idle, hideNow } from "./lib/idle.js";
+  import { createGestures } from "./lib/gestures.js";
+  import { NATIVE_UVC, isImmersive } from "./lib/uvc.js";
   import { matchBinding } from "./lib/hotkeys.js";
   import { setFullscreen, isFullscreen, setDecorations } from "./lib/tauri.js";
   import { nextRotation } from "./lib/transform.js";
@@ -339,7 +341,42 @@
     }
   }
 
+  // Phone: gestures stand in for the keyboard (lib/gestures.js). A tap
+  // toggles the toolbar, so whether it was up has to be read when the
+  // finger lands - the touch itself wakes it.
+  let toolbarUpAtTouch = false;
+  const gestures = createGestures({
+    tap: () => toolbarUpAtTouch && hideNow(),
+    doubleTap: () => toggleAppFullscreen(),
+    twoFingerTap: () => runCommand("toggle-stats"),
+    twoFinger: (kind) => {
+      if (kind === "rotate-cw" || kind === "rotate-ccw") runCommand(kind);
+      else updateSettings({ fit: kind === "fill" ? "cover" : "contain" });
+    },
+  });
+
+  function onStageTouch(event) {
+    if (!NATIVE_UVC || editingCrop) return;
+    if (event.type === "pointerdown") {
+      toolbarUpAtTouch = chromeVisible;
+      gestures.down(event);
+    } else if (event.type === "pointermove") gestures.move(event);
+    else if (event.type === "pointerup") gestures.up(event);
+    else gestures.cancel(event);
+  }
+
+  /** Android Back, asked by MainActivity before it leaves the app. */
+  function onBack() {
+    if (editingCrop) editingCrop = false;
+    else if (menuOpen) menuOpen = false;
+    else if (showHelp) showHelp = false;
+    else if (isImmersive()) setFullscreen(false);
+    else return false;
+    return true;
+  }
+
   onMount(() => {
+    if (NATIVE_UVC) window.__streamvivBack = onBack;
     (async () => {
       try {
         await setDecorations(currentSettings().decorations);
@@ -400,13 +437,22 @@
     hideCursor={$idle && $settings.toolbarMode !== TOOLBAR_PINNED}
     bind:videoWidth
     bind:videoHeight
-    on:dblclick={() => toggleAppFullscreen()}
+    on:dblclick={() => NATIVE_UVC || toggleAppFullscreen()}
+    on:pointerdown={onStageTouch}
+    on:pointermove={onStageTouch}
+    on:pointerup={onStageTouch}
+    on:pointercancel={onStageTouch}
   >
     <svelte:fragment slot="placeholder">
       <div>
         <p><strong>No picture</strong></p>
-        <p>Pick a capture device from the toolbar, or press <kbd>N</kbd> to reconnect.</p>
-        <p>Move the mouse to show the toolbar · <kbd>?</kbd> for shortcuts</p>
+        {#if NATIVE_UVC}
+          <p>Plug in the capture card, or tap <b>Reconnect</b> in the toolbar.</p>
+          <p>Tap to show the toolbar · long-press for the menu</p>
+        {:else}
+          <p>Pick a capture device from the toolbar, or press <kbd>N</kbd> to reconnect.</p>
+          <p>Move the mouse to show the toolbar · <kbd>?</kbd> for shortcuts</p>
+        {/if}
       </div>
     </svelte:fragment>
   </VideoStage>

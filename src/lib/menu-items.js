@@ -22,27 +22,33 @@ import { isFullFrame } from "./crop.js";
  * @returns {Array<{id?: string, label?: string, accelerator?: string,
  *                  hint?: string, checked?: boolean, separator?: boolean}>}
  */
-export function contextMenuItems(s) {
+export function contextMenuItems(s, touch = false) {
   const fit = FIT_MODES.find((m) => m.value === s.fit) || FIT_MODES[0];
   const toolbar = toolbarModeByValue(s.toolbarMode);
+  // On a phone the hint column names the gesture instead of the key
+  // (lib/gestures.js); items without one show nothing rather than a key.
+  const k = (key, gesture = "") => (touch ? { accelerator: "", hint: gesture } : { accelerator: key });
 
   return [
-    { id: "rotate-cw", label: "Rotate right", accelerator: "R" },
-    { id: "rotate-ccw", label: "Rotate left", accelerator: "Shift+R" },
-    { id: "cycle-fit", label: `Fit: ${fit.label}`, accelerator: "C" },
+    { id: "rotate-cw", label: "Rotate right", ...k("R", "twist ↻") },
+    { id: "rotate-ccw", label: "Rotate left", ...k("Shift+R", "twist ↺") },
+    { id: "cycle-fit", label: `Fit: ${fit.label}`, ...k("C", "pinch") },
     { id: "toggle-mirror", label: "Mirror", accelerator: "", checked: s.mirror },
-    { id: "edit-crop", label: "Crop…", accelerator: "X" },
+    { id: "edit-crop", label: "Crop…", ...k("X") },
     ...(isFullFrame(s.crop) ? [] : [{ id: "reset-crop", label: "Reset crop", accelerator: "" }]),
     { separator: true },
-    { id: "fullscreen", label: "Fullscreen", accelerator: "F" },
-    { id: "toggle-decorations", label: "Title bar", accelerator: "D", checked: s.decorations },
-    { id: "toggle-mute", label: "Mute", accelerator: "M", checked: s.muted },
-    { id: "cycle-toolbar", label: `Toolbar: ${toolbar.label}`, accelerator: "T" },
+    { id: "fullscreen", label: "Fullscreen", ...k("F", "double-tap") },
+    // A phone has no title bar to toggle.
+    ...(touch ? [] : [{ id: "toggle-decorations", label: "Title bar", accelerator: "D", checked: s.decorations }]),
+    { id: "toggle-mute", label: "Mute", ...k("M"), checked: s.muted },
+    { id: "cycle-toolbar", label: `Toolbar: ${toolbar.label}`, ...k("T", "tap") },
     { separator: true },
-    { id: "reconnect", label: "Reconnect device", accelerator: "N" },
-    { id: "toggle-stats", label: "Stream info", accelerator: "I", checked: s.showStats },
+    { id: "reconnect", label: "Reconnect device", ...k("N") },
+    { id: "toggle-stats", label: "Stream info", ...k("I", "2-finger tap"), checked: s.showStats },
     // "?" is not a key name the native accelerator parser accepts, so it is
     // carried as a display hint and left off the native item.
-    { id: "toggle-help", label: "Shortcuts", accelerator: "", hint: "?" },
+    touch
+      ? { id: "toggle-help", label: "Gestures", accelerator: "", hint: "" }
+      : { id: "toggle-help", label: "Shortcuts", accelerator: "", hint: "?" },
   ];
 }

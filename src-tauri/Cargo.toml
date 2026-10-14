@@ -1,6 +1,6 @@
 [package]
 name = "streamviv"
-version = "2.2.0"
+version = "2.3.0"
 description = "Ultra-lightweight capture card viewer with hardware rotation and full device/resolution/FPS control."
 authors = ["devwolf75"]
 edition = "2021"

@@ -174,7 +174,7 @@
   .panel {
     position: absolute;
     left: 50%;
-    bottom: max(16px, env(safe-area-inset-bottom));
+    bottom: calc(16px + var(--safe-bottom, 0px));
     transform: translateX(-50%);
     z-index: 21;
     display: flex;

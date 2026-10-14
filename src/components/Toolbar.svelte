@@ -232,7 +232,8 @@
   .toolbar {
     position: absolute;
     left: 50%;
-    bottom: 16px;
+    /* --safe-*: system bars on Android (lib/uvc.js), unset elsewhere. */
+    bottom: calc(16px + var(--safe-bottom, 0px));
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -292,9 +293,9 @@
      covers the picture. */
   @media (max-width: 720px) {
     .toolbar {
-      left: 8px;
-      right: 8px;
-      bottom: 8px;
+      left: calc(8px + var(--safe-left, 0px));
+      right: calc(8px + var(--safe-right, 0px));
+      bottom: calc(8px + var(--safe-bottom, 0px));
       max-width: none;
       transform: translateY(8px);
       flex-wrap: nowrap;

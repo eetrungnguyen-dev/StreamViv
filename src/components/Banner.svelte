@@ -15,7 +15,8 @@
 <style>
   .banner {
     position: absolute;
-    top: 12px;
+    /* --safe-*: system bars on Android (lib/uvc.js), unset elsewhere. */
+    top: calc(12px + var(--safe-top, 0px));
     left: 50%;
     transform: translateX(-50%);
     display: flex;

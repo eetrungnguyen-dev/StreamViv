@@ -35,8 +35,22 @@ if (bridge) {
       navigator.mediaDevices?.dispatchEvent(new Event("devicechange"));
     } else if (msg.type === "ended") {
       current?.end();
+    } else if (msg.type === "insets") {
+      applyInsets(msg.value);
     }
   };
+  applyInsets(JSON.parse(bridge.insets()));
+}
+
+/**
+ * The page runs edge-to-edge under the system bars; overlays keep clear
+ * of them with these (0 in fullscreen, where the bars are hidden).
+ */
+function applyInsets(i) {
+  const s = document.documentElement.style;
+  for (const side of ["top", "right", "bottom", "left"]) {
+    s.setProperty(`--safe-${side}`, `${Math.round(i?.[side] || 0)}px`);
+  }
 }
 
 /** Stands in for a MediaStreamTrack: stop(), getSettings() and "ended". */
@@ -96,6 +110,18 @@ export async function openUvcStream({ deviceId, width, height, fps }) {
     getAudioTracks: () => [],
   };
   return { stream, info };
+}
+
+let immersive = false;
+
+/** Android fullscreen: hide the system bars (the page already fills the screen). */
+export function setImmersive(on) {
+  immersive = on;
+  bridge.fullscreen(on);
+}
+
+export function isImmersive() {
+  return immersive;
 }
 
 /** Position the native picture; numbers are CSS px and get scaled here. */

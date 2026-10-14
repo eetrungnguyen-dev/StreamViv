@@ -14,6 +14,13 @@ import { NATIVE_UVC } from "./uvc.js";
  *   - the timer is rescheduled with a cheap clearTimeout/setTimeout pair
  *     rather than any rAF loop, so an idle app costs literally zero CPU.
  */
+let hide = () => {};
+
+/** Go idle now - a tap on the picture hides the toolbar it just showed. */
+export function hideNow() {
+  hide();
+}
+
 export const idle = readable(false, (set) => {
   let timer = 0;
   let isIdle = false;
@@ -37,6 +44,13 @@ export const idle = readable(false, (set) => {
     }
     if (timer) clearTimeout(timer);
     timer = setTimeout(goIdle, IDLE_TIMEOUT_MS);
+  };
+
+  hide = () => {
+    if (timer) clearTimeout(timer);
+    timer = 0;
+    isIdle = true;
+    set(true);
   };
 
   // "change": a choice made in a native picker is input too, though none of

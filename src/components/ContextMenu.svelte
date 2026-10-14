@@ -13,6 +13,7 @@
   import { createEventDispatcher } from "svelte";
   import { settings } from "../lib/settings.js";
   import { contextMenuItems } from "../lib/menu-items.js";
+  import { NATIVE_UVC } from "../lib/uvc.js";
 
   export let visible = false;
   export let x = 0;
@@ -24,7 +25,7 @@
   let left = 0;
   let top = 0;
 
-  $: items = contextMenuItems($settings);
+  $: items = contextMenuItems($settings, NATIVE_UVC);
   $: if (visible && menuEl) place(x, y);
 
   function place(px, py) {
