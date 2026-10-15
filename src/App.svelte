@@ -18,6 +18,7 @@
     aspectByValue,
     FIT_MODES,
     TOOLBAR_HIDDEN,
+    TOOLBAR_AUTO,
     TOOLBAR_PINNED,
     nextToolbarMode,
     toolbarModeByValue,
@@ -229,7 +230,7 @@
     const mode = nextToolbarMode(currentSettings().toolbarMode);
     updateSettings({ toolbarMode: mode });
     const m = toolbarModeByValue(mode);
-    say(`Toolbar: ${m.label} - ${m.hint}`, "info");
+    say(`Toolbar: ${m.label} - ${(NATIVE_UVC && m.touchHint) || m.hint}`, "info");
   }
 
   function cycleFit() {
@@ -346,7 +347,14 @@
   // finger lands - the touch itself wakes it.
   let toolbarUpAtTouch = false;
   const gestures = createGestures({
-    tap: () => toolbarUpAtTouch && hideNow(),
+    tap: () => {
+      // "Hidden" has no key to undo it on a phone, so a tap does: back to
+      // auto-hide, which shows the toolbar now and lets it fade as usual.
+      if (currentSettings().toolbarMode === TOOLBAR_HIDDEN) {
+        updateSettings({ toolbarMode: TOOLBAR_AUTO });
+        banner = ""; // the "Toolbar: Hidden" notice is now out of date
+      } else if (toolbarUpAtTouch) hideNow();
+    },
     doubleTap: () => toggleAppFullscreen(),
     twoFingerTap: () => runCommand("toggle-stats"),
     twoFinger: (kind) => {

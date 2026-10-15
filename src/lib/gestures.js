@@ -14,7 +14,7 @@
 
 /** For the help card, in the same shape as hotkeys.js BINDINGS. */
 export const GESTURES = [
-  { keys: "Tap", action: "Show / hide the toolbar" },
+  { keys: "Tap", action: "Show / hide the toolbar (also un-hides it)" },
   { keys: "Double-tap", action: "Fullscreen on / off" },
   { keys: "Two-finger twist", action: "Rotate 90 in the direction you turn" },
   { keys: "Pinch out / in", action: "Fill the screen / fit the whole picture" },
